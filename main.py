@@ -14,30 +14,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Reemplaza este enlace por el CSV oficial de tu Google Sheets de Precios
+# Enlace de exportación CSV oficial de tu Google Sheet
 URL_GOOGLE_SHEETS_CSV = "https://docs.google.com/spreadsheets/d/1FccGdJ1NfN-XsIL5cQomPf-Sw6eXM0Mb/export?format=csv&gid=1307404247"
 
 @app.get("/")
 def home():
-    return {"status": "ok", "message": "API de Intranet activa"}
+    return {"status": "ok", "message": "API activa correctamente"}
 
 @app.get("/api/precios")
 def obtener_precios():
     try:
-        response = requests.get(URL_GOOGLE_SHEETS_CSV)
+        # Petición a Google Sheets con User-Agent para evitar bloqueos
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(URL_GOOGLE_SHEETS_CSV, headers=headers, timeout=10)
+        
         if response.status_code != 200:
-            return {"status": "error", "message": "No se pudo obtener el archivo de Google Sheets"}
+            return {"status": "error", "message": f"Google Sheets respondió con código {response.status_code}"}
         
-        # Leer el CSV directamente desde Google Sheets
-        df = pd.read_csv(io.StringIO(response.text))
+        # Leer el CSV asegurando codificación UTF-8
+        content = response.content.decode('utf-8')
+        df = pd.read_csv(io.StringIO(content))
         
-        # Limpiar espacios en los nombres de las columnas
-        df.columns = df.columns.str.strip()
-        
-        # Reemplazar valores nulos
+        # Limpiar espacios en los nombres de columnas y datos
+        df.columns = df.columns.astype(str).str.strip()
         df = df.fillna("-")
         
         datos = df.to_dict(orient="records")
         return {"status": "ok", "data": datos}
+        
     except Exception as e:
         return {"status": "error", "message": str(e)}
