@@ -15,7 +15,7 @@ app.add_middleware(
 )
 
 # Reemplaza este enlace por el CSV oficial de tu Google Sheets de Precios
-URL_GOOGLE_SHEETS_CSV = "https://docs.google.com/spreadsheets/d/1FccGdJ1NfN-XsIL5cQomPf-Sw6eXM0Mb/edit?gid=1307404247#gid=1307404247"
+URL_GOOGLE_SHEETS_CSV = "https://docs.google.com/spreadsheets/d/1FccGdJ1NfN-XsIL5cQomPf-Sw6eXM0Mb/export?format=csv&gid=1307404247"
 
 @app.get("/")
 def home():
