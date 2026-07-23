@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
-import os
+import io
+import requests
 
 app = FastAPI()
 
-# Permitir solicitudes desde cualquier origen (Google Sites / iframes)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,25 +14,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Reemplaza este enlace por el CSV oficial de tu Google Sheets de Precios
+URL_GOOGLE_SHEETS_CSV = "https://docs.google.com/spreadsheets/d/1FccGdJ1NfN-XsIL5cQomPf-Sw6eXM0Mb/edit?gid=1307404247#gid=1307404247"
+
 @app.get("/")
 def home():
     return {"status": "ok", "message": "API de Intranet activa"}
 
 @app.get("/api/precios")
 def obtener_precios():
-    archivo = "Precios_y_Cantidades.xlsx"
-    
-    if not os.path.exists(archivo):
-        return {"status": "error", "message": f"Archivo {archivo} no encontrado"}
-        
     try:
-        # Leer el Excel omitiendo la primera fila de título corporativo
-        df = pd.read_excel(archivo, skiprows=1)
+        response = requests.get(URL_GOOGLE_SHEETS_CSV)
+        if response.status_code != 200:
+            return {"status": "error", "message": "No se pudo obtener el archivo de Google Sheets"}
         
-        # Limpiar encabezados de espacios sobrantes
+        # Leer el CSV directamente desde Google Sheets
+        df = pd.read_csv(io.StringIO(response.text))
+        
+        # Limpiar espacios en los nombres de las columnas
         df.columns = df.columns.str.strip()
         
-        # Reemplazar valores nulos para evitar errores JSON
+        # Reemplazar valores nulos
         df = df.fillna("-")
         
         datos = df.to_dict(orient="records")
